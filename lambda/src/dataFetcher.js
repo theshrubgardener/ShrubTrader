@@ -1,6 +1,8 @@
 const axios = require('axios');
 const winston = require('winston');
 const config = require('./config');
+const { getCustodyData } = require('./jupiterPerps/queries');
+const { PublicKey } = require('@solana/web3.js');
 
 // Setup logging
 const logger = winston.createLogger({
@@ -34,22 +36,34 @@ async function fetchMarketData() {
  */
 async function fetchPrices() {
   try {
-    // Using CoinGecko for simplicity
-    const response = await axios.get(`${config.COINGECKO_API_URL}/simple/price`, {
-      params: {
-        ids: 'solana,bitcoin',
-        vs_currencies: 'usd'
-      }
-    });
+    // Use Jupiter custody data for prices (more accurate for perps)
+    const [solCustody, btcCustody] = await Promise.all([
+      getCustodyData(new PublicKey('7xS2gz2bTp3fwCC7knJvUWTEU9Tycczu6VhJYKgi1wdz')), // SOL
+      getCustodyData(new PublicKey('5Pv3gM9JrFFH883SWAhvJC9RPYmo8UNxuFtv5bMMALkm'))  // BTC
+    ]);
 
     return {
-      SOL: response.data.solana.usd,
-      BTC: response.data.bitcoin.usd
+      SOL: parseFloat(solCustody.price) / 1_000_000, // Convert from base units
+      BTC: parseFloat(btcCustody.price) / 1_000_000
     };
   } catch (error) {
-    logger.error('Error fetching prices', { error: error.message });
-    // Fallback or retry
-    throw error;
+    logger.error('Error fetching prices from Jupiter', { error: error.message });
+    // Fallback to CoinGecko if Jupiter fails
+    try {
+      const response = await axios.get(`${config.COINGECKO_API_URL}/simple/price`, {
+        params: {
+          ids: 'solana,bitcoin',
+          vs_currencies: 'usd'
+        }
+      });
+      return {
+        SOL: response.data.solana.usd,
+        BTC: response.data.bitcoin.usd
+      };
+    } catch (fallbackError) {
+      logger.error('Fallback price fetch also failed', { error: fallbackError.message });
+      throw fallbackError;
+    }
   }
 }
 
@@ -59,17 +73,15 @@ async function fetchPrices() {
  */
 async function fetchPositions() {
   try {
-    // Placeholder: Jupiter Perp API for positions
-    // Assume endpoint for user positions
-    const response = await axios.get(`${config.JUPITER_PERP_API_URL}/positions`, {
-      headers: {
-        'Authorization': `Bearer ${config.JUPITER_API_KEY}`
-      }
-    });
+    // Jupiter Perp API - no API key required for basic endpoints
+    // Using free tier endpoints
+    const response = await axios.get(`${config.JUPITER_PERP_API_URL}/positions`);
 
     return response.data.positions || [];
   } catch (error) {
     logger.error('Error fetching positions', { error: error.message });
+    // Note: Jupiter Perp API may require Anchor IDL setup
+    // Reference: https://github.com/julianfssen/jupiter-perps-anchor-idl-parsing
     return [];
   }
 }

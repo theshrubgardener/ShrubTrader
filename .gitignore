@@ -3,3 +3,6 @@ node_modules/
 *.log
 .DS_Store
 serverless/
+TODO_SETUP.md
+JUPITER_PERPS_IMPLEMENTATION_PLAN.md
+rootkey.csv

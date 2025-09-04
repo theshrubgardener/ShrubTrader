@@ -1,0 +1,676 @@
+{
+  "service": {
+    "service": "trading-bot",
+    "serviceObject": {
+      "name": "trading-bot"
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "nodejs18.x",
+      "region": "us-east-2",
+      "environment": {
+        "DYNAMODB_TABLE": "trading-bot-state-dev",
+        "LOG_LEVEL": "info"
+      },
+      "iamRoleStatements": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "dynamodb:GetItem",
+            "dynamodb:PutItem",
+            "dynamodb:Query",
+            "dynamodb:Scan"
+          ],
+          "Resource": "arn:aws:dynamodb:us-east-2:*:table/trading-bot-state-dev"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "lambda:InvokeFunction"
+          ],
+          "Resource": "arn:aws:lambda:us-east-2:*:function:trading-bot-analysis-dev"
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "sns:Publish"
+          ],
+          "Resource": "arn:aws:sns:us-east-2:*:topic/trading-bot-alerts"
+        }
+      ],
+      "stage": "dev",
+      "versionFunctions": true,
+      "compiledCloudFormationTemplate": {
+        "AWSTemplateFormatVersion": "2010-09-09",
+        "Description": "The AWS CloudFormation template for this Serverless application",
+        "Resources": {
+          "ScheduledHandlerLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/trading-bot-dev-scheduledHandler"
+            }
+          },
+          "WebhookHandlerLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/trading-bot-dev-webhookHandler"
+            }
+          },
+          "AnalysisHandlerLogGroup": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+              "LogGroupName": "/aws/lambda/trading-bot-dev-analysisHandler"
+            }
+          },
+          "IamRoleLambdaExecution": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Effect": "Allow",
+                    "Principal": {
+                      "Service": [
+                        "lambda.amazonaws.com"
+                      ]
+                    },
+                    "Action": [
+                      "sts:AssumeRole"
+                    ]
+                  }
+                ]
+              },
+              "Policies": [
+                {
+                  "PolicyName": {
+                    "Fn::Join": [
+                      "-",
+                      [
+                        "trading-bot",
+                        "dev",
+                        "lambda"
+                      ]
+                    ]
+                  },
+                  "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:CreateLogStream",
+                          "logs:CreateLogGroup",
+                          "logs:TagResource"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/trading-bot-dev*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "logs:PutLogEvents"
+                        ],
+                        "Resource": [
+                          {
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/trading-bot-dev*:*:*"
+                          }
+                        ]
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iamRoleStatements\"][0]"
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iamRoleStatements\"][1]"
+                      },
+                      {
+                        "$ref": "$[\"service\"][\"provider\"][\"iamRoleStatements\"][2]"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "Path": "/",
+              "RoleName": {
+                "Fn::Join": [
+                  "-",
+                  [
+                    "trading-bot",
+                    "dev",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    "lambdaRole"
+                  ]
+                ]
+              }
+            }
+          },
+          "ScheduledHandlerLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-2-2e7151f1-8bf6",
+                "S3Key": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z/trading-bot.zip"
+              },
+              "Handler": "src/index.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "trading-bot-dev-scheduledHandler",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "DYNAMODB_TABLE": "trading-bot-state-dev",
+                  "LOG_LEVEL": "info",
+                  "ANALYSIS_LAMBDA_NAME": "trading-bot-analysis-dev"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "ScheduledHandlerLogGroup"
+            ]
+          },
+          "WebhookHandlerLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-2-2e7151f1-8bf6",
+                "S3Key": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z/trading-bot.zip"
+              },
+              "Handler": "src/webhookHandler.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "trading-bot-dev-webhookHandler",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "DYNAMODB_TABLE": "trading-bot-state-dev",
+                  "LOG_LEVEL": "info"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "WebhookHandlerLogGroup"
+            ]
+          },
+          "AnalysisHandlerLambdaFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+              "Code": {
+                "S3Bucket": "serverless-framework-deployments-us-east-2-2e7151f1-8bf6",
+                "S3Key": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z/trading-bot.zip"
+              },
+              "Handler": "src/index.handler",
+              "Runtime": "nodejs18.x",
+              "FunctionName": "trading-bot-dev-analysisHandler",
+              "MemorySize": 1024,
+              "Timeout": 6,
+              "Environment": {
+                "Variables": {
+                  "DYNAMODB_TABLE": "trading-bot-state-dev",
+                  "LOG_LEVEL": "info"
+                }
+              },
+              "Role": {
+                "Fn::GetAtt": [
+                  "IamRoleLambdaExecution",
+                  "Arn"
+                ]
+              }
+            },
+            "DependsOn": [
+              "AnalysisHandlerLogGroup"
+            ]
+          },
+          "ScheduledHandlerLambdaVersionYy7FVuArJRi3pY9RohyvxbFtqJ0v5wlLfawNq4g": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "ScheduledHandlerLambdaFunction"
+              },
+              "CodeSha256": "9Fa4DnETP5vciYVRD1NyG8VGnZqcpQQ21tZA1AiB31s="
+            }
+          },
+          "WebhookHandlerLambdaVersionnly5k12YjpBmSxW2GkiloA0DUEU3fyeQqmeERTeqmI": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "WebhookHandlerLambdaFunction"
+              },
+              "CodeSha256": "9Fa4DnETP5vciYVRD1NyG8VGnZqcpQQ21tZA1AiB31s="
+            }
+          },
+          "AnalysisHandlerLambdaVersionpTIpBe010Adp8vGN7bpg5aEdr1xSMdK9uzqdtHME": {
+            "Type": "AWS::Lambda::Version",
+            "DeletionPolicy": "Retain",
+            "Properties": {
+              "FunctionName": {
+                "Ref": "AnalysisHandlerLambdaFunction"
+              },
+              "CodeSha256": "9Fa4DnETP5vciYVRD1NyG8VGnZqcpQQ21tZA1AiB31s="
+            }
+          },
+          "ScheduledHandlerEventsRuleSchedule1": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+              "ScheduleExpression": "rate(30 minutes)",
+              "State": "ENABLED",
+              "Targets": [
+                {
+                  "Arn": {
+                    "Fn::GetAtt": [
+                      "ScheduledHandlerLambdaFunction",
+                      "Arn"
+                    ]
+                  },
+                  "Id": "scheduledHandlerSchedule"
+                }
+              ]
+            }
+          },
+          "ScheduledHandlerLambdaPermissionEventsRuleSchedule1": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "ScheduledHandlerLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "events.amazonaws.com",
+              "SourceArn": {
+                "Fn::GetAtt": [
+                  "ScheduledHandlerEventsRuleSchedule1",
+                  "Arn"
+                ]
+              }
+            }
+          },
+          "ApiGatewayRestApi": {
+            "Type": "AWS::ApiGateway::RestApi",
+            "Properties": {
+              "Name": "dev-trading-bot",
+              "EndpointConfiguration": {
+                "Types": [
+                  "EDGE"
+                ]
+              },
+              "Policy": ""
+            }
+          },
+          "ApiGatewayResourceWebhook": {
+            "Type": "AWS::ApiGateway::Resource",
+            "Properties": {
+              "ParentId": {
+                "Fn::GetAtt": [
+                  "ApiGatewayRestApi",
+                  "RootResourceId"
+                ]
+              },
+              "PathPart": "webhook",
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodWebhookOptions": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "AuthorizationType": "NONE",
+              "HttpMethod": "OPTIONS",
+              "MethodResponses": [
+                {
+                  "StatusCode": "200",
+                  "ResponseParameters": {
+                    "method.response.header.Access-Control-Allow-Origin": true,
+                    "method.response.header.Access-Control-Allow-Headers": true,
+                    "method.response.header.Access-Control-Allow-Methods": true
+                  },
+                  "ResponseModels": {}
+                }
+              ],
+              "RequestParameters": {},
+              "Integration": {
+                "Type": "MOCK",
+                "RequestTemplates": {
+                  "application/json": "{statusCode:200}"
+                },
+                "ContentHandling": "CONVERT_TO_TEXT",
+                "IntegrationResponses": [
+                  {
+                    "StatusCode": "200",
+                    "ResponseParameters": {
+                      "method.response.header.Access-Control-Allow-Origin": "'*'",
+                      "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                      "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+                    },
+                    "ResponseTemplates": {
+                      "application/json": ""
+                    }
+                  }
+                ]
+              },
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceWebhook"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              }
+            }
+          },
+          "ApiGatewayMethodWebhookPost": {
+            "Type": "AWS::ApiGateway::Method",
+            "Properties": {
+              "HttpMethod": "POST",
+              "RequestParameters": {},
+              "ResourceId": {
+                "Ref": "ApiGatewayResourceWebhook"
+              },
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "ApiKeyRequired": false,
+              "AuthorizationType": "NONE",
+              "Integration": {
+                "IntegrationHttpMethod": "POST",
+                "Type": "AWS_PROXY",
+                "Uri": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":apigateway:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":lambda:path/2015-03-31/functions/",
+                      {
+                        "Fn::GetAtt": [
+                          "WebhookHandlerLambdaFunction",
+                          "Arn"
+                        ]
+                      },
+                      "/invocations"
+                    ]
+                  ]
+                }
+              },
+              "MethodResponses": []
+            },
+            "DependsOn": [
+              "WebhookHandlerLambdaPermissionApiGateway"
+            ]
+          },
+          "ApiGatewayDeployment1757012504196": {
+            "Type": "AWS::ApiGateway::Deployment",
+            "Properties": {
+              "RestApiId": {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "StageName": "dev"
+            },
+            "DependsOn": [
+              "ApiGatewayMethodWebhookOptions",
+              "ApiGatewayMethodWebhookPost"
+            ]
+          },
+          "WebhookHandlerLambdaPermissionApiGateway": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+              "FunctionName": {
+                "Fn::GetAtt": [
+                  "WebhookHandlerLambdaFunction",
+                  "Arn"
+                ]
+              },
+              "Action": "lambda:InvokeFunction",
+              "Principal": "apigateway.amazonaws.com",
+              "SourceArn": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":execute-api:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":",
+                    {
+                      "Ref": "ApiGatewayRestApi"
+                    },
+                    "/*/*"
+                  ]
+                ]
+              }
+            }
+          },
+          "StateTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+              "TableName": "trading-bot-state-dev",
+              "AttributeDefinitions": [
+                {
+                  "AttributeName": "id",
+                  "AttributeType": "S"
+                }
+              ],
+              "KeySchema": [
+                {
+                  "AttributeName": "id",
+                  "KeyType": "HASH"
+                }
+              ],
+              "BillingMode": "PAY_PER_REQUEST"
+            }
+          }
+        },
+        "Outputs": {
+          "ServerlessDeploymentBucketName": {
+            "Value": "serverless-framework-deployments-us-east-2-2e7151f1-8bf6",
+            "Export": {
+              "Name": "sls-trading-bot-dev-ServerlessDeploymentBucketName"
+            }
+          },
+          "ScheduledHandlerLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "ScheduledHandlerLambdaVersionYy7FVuArJRi3pY9RohyvxbFtqJ0v5wlLfawNq4g"
+            },
+            "Export": {
+              "Name": "sls-trading-bot-dev-ScheduledHandlerLambdaFunctionQualifiedArn"
+            }
+          },
+          "WebhookHandlerLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "WebhookHandlerLambdaVersionnly5k12YjpBmSxW2GkiloA0DUEU3fyeQqmeERTeqmI"
+            },
+            "Export": {
+              "Name": "sls-trading-bot-dev-WebhookHandlerLambdaFunctionQualifiedArn"
+            }
+          },
+          "AnalysisHandlerLambdaFunctionQualifiedArn": {
+            "Description": "Current Lambda function version",
+            "Value": {
+              "Ref": "AnalysisHandlerLambdaVersionpTIpBe010Adp8vGN7bpg5aEdr1xSMdK9uzqdtHME"
+            },
+            "Export": {
+              "Name": "sls-trading-bot-dev-AnalysisHandlerLambdaFunctionQualifiedArn"
+            }
+          },
+          "ServiceEndpoint": {
+            "Description": "URL of the service endpoint",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  "https://",
+                  {
+                    "Ref": "ApiGatewayRestApi"
+                  },
+                  ".execute-api.",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  ".",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/dev"
+                ]
+              ]
+            },
+            "Export": {
+              "Name": "sls-trading-bot-dev-ServiceEndpoint"
+            }
+          }
+        }
+      },
+      "vpc": {}
+    },
+    "plugins": null,
+    "pluginsData": {},
+    "functions": {
+      "scheduledHandler": {
+        "handler": "src/index.handler",
+        "events": [
+          {
+            "schedule": "rate(30 minutes)"
+          }
+        ],
+        "environment": {
+          "ANALYSIS_LAMBDA_NAME": "trading-bot-analysis-dev"
+        },
+        "name": "trading-bot-dev-scheduledHandler",
+        "package": {},
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs18.x",
+        "vpc": {},
+        "versionLogicalId": "ScheduledHandlerLambdaVersionYy7FVuArJRi3pY9RohyvxbFtqJ0v5wlLfawNq4g"
+      },
+      "webhookHandler": {
+        "handler": "src/webhookHandler.handler",
+        "events": [
+          {
+            "http": {
+              "path": "webhook",
+              "method": "post",
+              "cors": {
+                "origin": "*",
+                "methods": [
+                  "OPTIONS",
+                  "POST"
+                ],
+                "headers": [
+                  "Content-Type",
+                  "X-Amz-Date",
+                  "Authorization",
+                  "X-Api-Key",
+                  "X-Amz-Security-Token",
+                  "X-Amz-User-Agent",
+                  "X-Amzn-Trace-Id"
+                ],
+                "allowCredentials": false
+              },
+              "integration": "AWS_PROXY"
+            }
+          }
+        ],
+        "name": "trading-bot-dev-webhookHandler",
+        "package": {},
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs18.x",
+        "vpc": {},
+        "versionLogicalId": "WebhookHandlerLambdaVersionnly5k12YjpBmSxW2GkiloA0DUEU3fyeQqmeERTeqmI"
+      },
+      "analysisHandler": {
+        "handler": "src/index.handler",
+        "events": [],
+        "name": "trading-bot-dev-analysisHandler",
+        "package": {},
+        "memory": 1024,
+        "timeout": 6,
+        "runtime": "nodejs18.x",
+        "vpc": {},
+        "versionLogicalId": "AnalysisHandlerLambdaVersionpTIpBe010Adp8vGN7bpg5aEdr1xSMdK9uzqdtHME"
+      }
+    },
+    "resources": {
+      "Resources": {
+        "StateTable": {
+          "Type": "AWS::DynamoDB::Table",
+          "Properties": {
+            "TableName": "trading-bot-state-dev",
+            "AttributeDefinitions": [
+              {
+                "AttributeName": "id",
+                "AttributeType": "S"
+              }
+            ],
+            "KeySchema": [
+              {
+                "AttributeName": "id",
+                "KeyType": "HASH"
+              }
+            ],
+            "BillingMode": "PAY_PER_REQUEST"
+          }
+        }
+      },
+      "Outputs": {}
+    },
+    "configValidationMode": "warn",
+    "serviceFilename": "serverless",
+    "initialServerlessConfig": {
+      "service": "trading-bot",
+      "provider": {
+        "$ref": "$[\"service\"][\"provider\"]"
+      },
+      "functions": {
+        "$ref": "$[\"service\"][\"functions\"]"
+      },
+      "resources": {
+        "$ref": "$[\"service\"][\"resources\"]"
+      },
+      "plugins": null
+    },
+    "appId": null,
+    "orgId": null,
+    "layers": {},
+    "artifact": "/Users/ZachMacStudio/Desktop/SHRB/trading-bot/lambda/.serverless/trading-bot.zip"
+  },
+  "package": {
+    "artifactDirectoryName": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z",
+    "artifact": "trading-bot.zip"
+  }
+}

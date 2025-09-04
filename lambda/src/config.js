@@ -31,7 +31,7 @@ const config = {
 
   // API Keys (from environment)
   GROK_API_KEY: process.env.GROK_API_KEY,
-  JUPITER_API_KEY: process.env.JUPITER_API_KEY,
+  JUPITER_API_KEY: process.env.JUPITER_API_KEY || null, // Optional - free tier available
 
   // Wallet private key for Solana (from Secrets Manager)
   WALLET_PRIVATE_KEY: process.env.WALLET_PRIVATE_KEY,

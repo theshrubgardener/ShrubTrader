@@ -4,6 +4,9 @@
   "dependencies": {
     "axios": "^1.6.0",
     "@solana/web3.js": "^1.87.6",
+    "@solana/spl-token": "^0.4.9",
+    "@coral-xyz/anchor": "^0.29.0",
+    "decimal.js": "^10.6.0",
     "lodash": "^4.17.21",
     "@aws-sdk/client-dynamodb": "^3.490.0",
     "@aws-sdk/client-sns": "^3.490.0",
