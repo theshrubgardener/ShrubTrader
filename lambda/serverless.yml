@@ -1,0 +1,62 @@
+service: trading-bot
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    DYNAMODB_TABLE: ${self:service}-state-${opt:stage, 'dev'}
+    LOG_LEVEL: info
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:Query
+        - dynamodb:Scan
+      Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource: arn:aws:lambda:${self:provider.region}:*:function:${self:service}-analysis-${opt:stage, 'dev'}
+    - Effect: Allow
+      Action:
+        - sns:Publish
+      Resource: arn:aws:sns:${self:provider.region}:*:topic/trading-bot-alerts
+
+functions:
+  scheduledHandler:
+    handler: src/index.handler
+    events:
+      - schedule: rate(30 minutes)
+    environment:
+      ANALYSIS_LAMBDA_NAME: ${self:service}-analysis-${opt:stage, 'dev'}
+
+  webhookHandler:
+    handler: src/webhookHandler.handler
+    events:
+      - http:
+          path: /webhook
+          method: post
+          cors: true
+
+  analysisHandler:
+    handler: src/index.handler # Reuse for analysis
+    reservedConcurrency: 1 # Prevent concurrent executions
+
+resources:
+  Resources:
+    StateTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+plugins:
+  - serverless-offline # For local development
