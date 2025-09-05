@@ -19,19 +19,33 @@ const lambdaClient = new LambdaClient({ region: process.env.AWS_REGION });
  * @param {Object} context - Lambda context
  */
 exports.handler = async (event, context) => {
-  logger.info('Webhook received', { event });
+  logger.info('🎣 WEBHOOK: Signal received', {
+    bodyLength: event.body?.length,
+    source: 'TradingView'
+  });
 
   try {
     // Parse payload
+    logger.info('📝 WEBHOOK: Parsing payload');
     const payload = JSON.parse(event.body);
     const { timeframe, signal, ticker, details } = payload;
+    logger.info('✅ WEBHOOK: Payload parsed', {
+      timeframe,
+      signal,
+      ticker,
+      hasDetails: !!details
+    });
 
     // Validate payload
+    logger.info('🔍 WEBHOOK: Validating payload');
     if (!timeframe || !signal || !['buy', 'sell', 'hold'].includes(signal)) {
+      logger.error('❌ WEBHOOK: Invalid payload', { timeframe, signal });
       throw new Error('Invalid payload');
     }
+    logger.info('✅ WEBHOOK: Payload validation passed');
 
     // Store signal in DynamoDB
+    logger.info('💾 WEBHOOK: Storing signal in database');
     const timestamp = Date.now();
     const item = {
       id: { S: `${ticker || 'UNKNOWN'}-${timeframe}-${timestamp}` },
@@ -48,24 +62,36 @@ exports.handler = async (event, context) => {
       Item: item
     }));
 
-    logger.info('Signal stored', { timeframe, signal });
+    logger.info('✅ WEBHOOK: Signal stored successfully', {
+      id: item.id.S,
+      timeframe,
+      signal,
+      ticker
+    });
 
     // If 30min signal, trigger analysis Lambda
     if (timeframe === '30min') {
+      logger.info('🚀 WEBHOOK: Triggering analysis Lambda (30min signal)');
       await lambdaClient.send(new InvokeCommand({
         FunctionName: process.env.ANALYSIS_LAMBDA_NAME || 'trading-bot-analysis',
         InvocationType: 'Event', // Asynchronous
         Payload: JSON.stringify({ trigger: 'webhook', timestamp })
       }));
-      logger.info('Analysis Lambda triggered');
+      logger.info('✅ WEBHOOK: Analysis Lambda triggered successfully');
+    } else {
+      logger.info('⏭️ WEBHOOK: No analysis trigger (not 30min timeframe)');
     }
 
+    logger.info('🎉 WEBHOOK: Processing complete');
     return {
       statusCode: 200,
-      body: JSON.stringify({ message: 'Signal received' })
+      body: JSON.stringify({ message: 'Signal received and processed' })
     };
   } catch (error) {
-    logger.error('Error in webhook handler', { error: error.message });
+    logger.error('❌ WEBHOOK: Error processing signal', {
+      error: error.message,
+      stack: error.stack
+    });
     return {
       statusCode: 400,
       body: JSON.stringify({ error: error.message })
