@@ -28,7 +28,9 @@ This is a serverless trading bot for Solana using TradingView signals, Grok AI, 
    - `AWS_REGION` (set to us-east-2)
 
 3. **TradingView Setup**:
-   - **Webhook URL**: `https://yqttqc1l4k.execute-api.us-east-2.amazonaws.com/dev/webhook`
+   - **Webhook URL**: [REDACTED - Check your deployment output for the actual URL]
+   - **Security Note**: Keep your webhook URL private! Anyone with this URL can send signals to your bot.
+   - **Recommended**: Add API Gateway authentication (API key or JWT) for production use.
    - **Payload Format** (include ticker for multi-asset strategies):
      ```json
      {
@@ -112,6 +114,17 @@ This is a serverless trading bot for Solana using TradingView signals, Grok AI, 
 - Use least-privilege IAM roles.
 - Store secrets in AWS Secrets Manager.
 - Validate webhook signatures.
+
+### Webhook Security (IMPORTANT)
+- **Keep webhook URL private** - Anyone with the URL can send signals to your bot
+- **Add authentication** for production:
+  - API Gateway API keys
+  - JWT tokens
+  - IP whitelisting
+  - Custom authorizers
+- **Validate payloads** - The system validates required fields but additional validation is recommended
+- **Rate limiting** - Consider adding API Gateway rate limits to prevent abuse
+- **Monitor usage** - Check CloudWatch logs for unusual activity
 
 ## Monitoring
 
