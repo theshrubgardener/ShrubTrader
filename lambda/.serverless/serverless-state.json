@@ -6,7 +6,7 @@
     },
     "provider": {
       "name": "aws",
-      "runtime": "nodejs18.x",
+      "runtime": "nodejs20.x",
       "region": "us-east-2",
       "environment": {
         "DYNAMODB_TABLE": "trading-bot-state-dev",
@@ -154,10 +154,10 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-2-2e7151f1-8bf6",
-                "S3Key": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z/trading-bot.zip"
+                "S3Key": "serverless/trading-bot/dev/1757018263469-2025-09-04T20:37:43.469Z/trading-bot.zip"
               },
               "Handler": "src/index.handler",
-              "Runtime": "nodejs18.x",
+              "Runtime": "nodejs20.x",
               "FunctionName": "trading-bot-dev-scheduledHandler",
               "MemorySize": 1024,
               "Timeout": 6,
@@ -184,10 +184,10 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-2-2e7151f1-8bf6",
-                "S3Key": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z/trading-bot.zip"
+                "S3Key": "serverless/trading-bot/dev/1757018263469-2025-09-04T20:37:43.469Z/trading-bot.zip"
               },
               "Handler": "src/webhookHandler.handler",
-              "Runtime": "nodejs18.x",
+              "Runtime": "nodejs20.x",
               "FunctionName": "trading-bot-dev-webhookHandler",
               "MemorySize": 1024,
               "Timeout": 6,
@@ -213,10 +213,10 @@
             "Properties": {
               "Code": {
                 "S3Bucket": "serverless-framework-deployments-us-east-2-2e7151f1-8bf6",
-                "S3Key": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z/trading-bot.zip"
+                "S3Key": "serverless/trading-bot/dev/1757018263469-2025-09-04T20:37:43.469Z/trading-bot.zip"
               },
               "Handler": "src/index.handler",
-              "Runtime": "nodejs18.x",
+              "Runtime": "nodejs20.x",
               "FunctionName": "trading-bot-dev-analysisHandler",
               "MemorySize": 1024,
               "Timeout": 6,
@@ -237,34 +237,34 @@
               "AnalysisHandlerLogGroup"
             ]
           },
-          "ScheduledHandlerLambdaVersionYy7FVuArJRi3pY9RohyvxbFtqJ0v5wlLfawNq4g": {
+          "ScheduledHandlerLambdaVersionDuGFlE4OY5EyqKUsUzZY3XV2KC5feCBB3nRAlFtErcY": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "ScheduledHandlerLambdaFunction"
               },
-              "CodeSha256": "9Fa4DnETP5vciYVRD1NyG8VGnZqcpQQ21tZA1AiB31s="
+              "CodeSha256": "xY3vyrI4EvOAKJwxkKQVsdxpraKir78u+IDQkyr9BDg="
             }
           },
-          "WebhookHandlerLambdaVersionnly5k12YjpBmSxW2GkiloA0DUEU3fyeQqmeERTeqmI": {
+          "WebhookHandlerLambdaVersion3rcSSJxUySLzOgCCqZchKpznkrtp5QSCO1nMKDbLow": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "WebhookHandlerLambdaFunction"
               },
-              "CodeSha256": "9Fa4DnETP5vciYVRD1NyG8VGnZqcpQQ21tZA1AiB31s="
+              "CodeSha256": "xY3vyrI4EvOAKJwxkKQVsdxpraKir78u+IDQkyr9BDg="
             }
           },
-          "AnalysisHandlerLambdaVersionpTIpBe010Adp8vGN7bpg5aEdr1xSMdK9uzqdtHME": {
+          "AnalysisHandlerLambdaVersionpduPHlsIDnVEIX8VX8U39SnYl81MaOMz64mM3ManM": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "AnalysisHandlerLambdaFunction"
               },
-              "CodeSha256": "9Fa4DnETP5vciYVRD1NyG8VGnZqcpQQ21tZA1AiB31s="
+              "CodeSha256": "xY3vyrI4EvOAKJwxkKQVsdxpraKir78u+IDQkyr9BDg="
             }
           },
           "ScheduledHandlerEventsRuleSchedule1": {
@@ -422,7 +422,7 @@
               "WebhookHandlerLambdaPermissionApiGateway"
             ]
           },
-          "ApiGatewayDeployment1757012504196": {
+          "ApiGatewayDeployment1757018256199": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
@@ -502,7 +502,7 @@
           "ScheduledHandlerLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "ScheduledHandlerLambdaVersionYy7FVuArJRi3pY9RohyvxbFtqJ0v5wlLfawNq4g"
+              "Ref": "ScheduledHandlerLambdaVersionDuGFlE4OY5EyqKUsUzZY3XV2KC5feCBB3nRAlFtErcY"
             },
             "Export": {
               "Name": "sls-trading-bot-dev-ScheduledHandlerLambdaFunctionQualifiedArn"
@@ -511,7 +511,7 @@
           "WebhookHandlerLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "WebhookHandlerLambdaVersionnly5k12YjpBmSxW2GkiloA0DUEU3fyeQqmeERTeqmI"
+              "Ref": "WebhookHandlerLambdaVersion3rcSSJxUySLzOgCCqZchKpznkrtp5QSCO1nMKDbLow"
             },
             "Export": {
               "Name": "sls-trading-bot-dev-WebhookHandlerLambdaFunctionQualifiedArn"
@@ -520,7 +520,7 @@
           "AnalysisHandlerLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "AnalysisHandlerLambdaVersionpTIpBe010Adp8vGN7bpg5aEdr1xSMdK9uzqdtHME"
+              "Ref": "AnalysisHandlerLambdaVersionpduPHlsIDnVEIX8VX8U39SnYl81MaOMz64mM3ManM"
             },
             "Export": {
               "Name": "sls-trading-bot-dev-AnalysisHandlerLambdaFunctionQualifiedArn"
@@ -573,9 +573,9 @@
         "package": {},
         "memory": 1024,
         "timeout": 6,
-        "runtime": "nodejs18.x",
+        "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "ScheduledHandlerLambdaVersionYy7FVuArJRi3pY9RohyvxbFtqJ0v5wlLfawNq4g"
+        "versionLogicalId": "ScheduledHandlerLambdaVersionDuGFlE4OY5EyqKUsUzZY3XV2KC5feCBB3nRAlFtErcY"
       },
       "webhookHandler": {
         "handler": "src/webhookHandler.handler",
@@ -609,9 +609,9 @@
         "package": {},
         "memory": 1024,
         "timeout": 6,
-        "runtime": "nodejs18.x",
+        "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "WebhookHandlerLambdaVersionnly5k12YjpBmSxW2GkiloA0DUEU3fyeQqmeERTeqmI"
+        "versionLogicalId": "WebhookHandlerLambdaVersion3rcSSJxUySLzOgCCqZchKpznkrtp5QSCO1nMKDbLow"
       },
       "analysisHandler": {
         "handler": "src/index.handler",
@@ -620,9 +620,9 @@
         "package": {},
         "memory": 1024,
         "timeout": 6,
-        "runtime": "nodejs18.x",
+        "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "AnalysisHandlerLambdaVersionpTIpBe010Adp8vGN7bpg5aEdr1xSMdK9uzqdtHME"
+        "versionLogicalId": "AnalysisHandlerLambdaVersionpduPHlsIDnVEIX8VX8U39SnYl81MaOMz64mM3ManM"
       }
     },
     "resources": {
@@ -670,7 +670,7 @@
     "artifact": "/Users/ZachMacStudio/Desktop/SHRB/trading-bot/lambda/.serverless/trading-bot.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/trading-bot/dev/1757012512119-2025-09-04T19:01:52.119Z",
+    "artifactDirectoryName": "serverless/trading-bot/dev/1757018263469-2025-09-04T20:37:43.469Z",
     "artifact": "trading-bot.zip"
   }
 }

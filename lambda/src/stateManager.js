@@ -95,9 +95,72 @@ async function updatePositions(positions) {
   await updateState({ positions });
 }
 
+/**
+ * Store price data for tracking
+ * @param {Object} priceEntry - {timestamp, SOL, BTC}
+ */
+async function storePriceData(priceEntry) {
+  try {
+    const state = await getState();
+    if (!state.priceHistory) {
+      state.priceHistory = [];
+    }
+
+    // Keep only last 7 days of price data (336 entries at 30min intervals)
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+    state.priceHistory = state.priceHistory.filter(p => p.timestamp > sevenDaysAgo);
+
+    // Add new price entry
+    state.priceHistory.push(priceEntry);
+
+    await updateState({ priceHistory: state.priceHistory });
+  } catch (error) {
+    logger.error('Error storing price data', { error });
+  }
+}
+
+/**
+ * Clean up old data (signals and price history older than 7 days)
+ */
+async function cleanupOldData() {
+  try {
+    const state = await getState();
+    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+
+    // Clean up old signals
+    if (state.signals) {
+      const originalCount = state.signals.length;
+      state.signals = state.signals.filter(s => s.timestamp > sevenDaysAgo);
+      logger.info('Cleaned up old signals', {
+        originalCount,
+        remainingCount: state.signals.length
+      });
+    }
+
+    // Clean up old price history (already done in storePriceData, but double-check)
+    if (state.priceHistory) {
+      const originalPriceCount = state.priceHistory.length;
+      state.priceHistory = state.priceHistory.filter(p => p.timestamp > sevenDaysAgo);
+      logger.info('Cleaned up old price history', {
+        originalCount: originalPriceCount,
+        remainingCount: state.priceHistory.length
+      });
+    }
+
+    await updateState({
+      signals: state.signals || [],
+      priceHistory: state.priceHistory || []
+    });
+  } catch (error) {
+    logger.error('Error cleaning up old data', { error });
+  }
+}
+
 module.exports = {
   getState,
   updateState,
   addSignal,
-  updatePositions
+  updatePositions,
+  storePriceData,
+  cleanupOldData
 };

@@ -1,6 +1,6 @@
 const winston = require('winston');
 const config = require('./config');
-const { getState, updateState } = require('./stateManager');
+const { getState, updateState, storePriceData, cleanupOldData } = require('./stateManager');
 const { fetchMarketData } = require('./dataFetcher');
 const { buildPrompt } = require('./promptBuilder');
 const { callGrok } = require('./aiCaller');
@@ -78,11 +78,41 @@ async function performFullAnalysis(signals, positions) {
     throw new Error('Invalid position stack');
   }
 
+  // Group signals by ticker
+  const signalsByTicker = {};
+  signals.forEach(signal => {
+    const ticker = signal.ticker || 'UNKNOWN';
+    if (!signalsByTicker[ticker]) {
+      signalsByTicker[ticker] = [];
+    }
+    signalsByTicker[ticker].push(signal);
+  });
+
+  // Process each ticker independently (not async to avoid rate limits)
+  for (const [ticker, tickerSignals] of Object.entries(signalsByTicker)) {
+    logger.info(`Processing signals for ${ticker}`, { signalCount: tickerSignals.length });
+
+    try {
+      await processTickerAnalysis(ticker, tickerSignals, positions);
+    } catch (error) {
+      logger.error(`Error processing ${ticker}`, { error: error.message });
+      // Continue with other tickers even if one fails
+    }
+  }
+
+  // Update state
+  await updateState({ signals, positions, lastAnalysis: Date.now() / 1000 });
+}
+
+async function processTickerAnalysis(ticker, tickerSignals, positions) {
   // Fetch market data
   const marketData = await fetchMarketData();
 
-  // Build prompt
-  const prompt = buildPrompt(signals, positions, marketData);
+  // Filter positions for this ticker
+  const tickerPositions = positions.filter(p => p.ticker === ticker);
+
+  // Build prompt for this ticker
+  const prompt = await buildPrompt(tickerSignals, tickerPositions, marketData);
 
   // Call Grok
   const aiResponse = await callGrok(prompt);
@@ -90,18 +120,15 @@ async function performFullAnalysis(signals, positions) {
   // Parse response
   const { action, confidence, leverage, reason } = JSON.parse(aiResponse);
 
-  logger.info('AI Decision', { action, confidence, leverage, reason });
+  logger.info(`AI Decision for ${ticker}`, { action, confidence, leverage, reason });
 
   // Execute trade if not hold
   if (action !== 'hold') {
     await executeTrade(action, confidence, leverage, positions);
   }
 
-  // Update NAV
-  await updateNAV();
-
-  // Update state
-  await updateState({ signals, positions, lastAnalysis: Date.now() / 1000 });
+  // Skip NAV update - handled by existing system every 2 hours
+  logger.info('Skipping NAV update - handled by existing automated system');
 }
 
 /**
@@ -109,9 +136,28 @@ async function performFullAnalysis(signals, positions) {
  * @param {Array} signals - Recent signals
  */
 async function performLightCheck(signals) {
-  // Just log signals or perform basic checks
-  logger.info('Light check signals', { signals });
-  // Optionally, check for confluence without AI
+  try {
+    // Track current prices every 30 minutes
+    const marketData = await fetchMarketData();
+    const priceEntry = {
+      timestamp: Date.now(),
+      SOL: marketData.prices.SOL,
+      BTC: marketData.prices.BTC
+    };
+
+    // Store price data (this will be used for AI analysis)
+    await storePriceData(priceEntry);
+
+    // Clean up old data (older than 7 days)
+    await cleanupOldData();
+
+    logger.info('Light check completed', {
+      signalsCount: signals.length,
+      pricesTracked: priceEntry
+    });
+  } catch (error) {
+    logger.error('Error in light check', { error: error.message });
+  }
 }
 
 /**

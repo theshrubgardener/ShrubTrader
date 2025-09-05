@@ -35,34 +35,56 @@ async function fetchMarketData() {
  * @returns {Object} {SOL: number, BTC: number}
  */
 async function fetchPrices() {
-  try {
-    // Use Jupiter custody data for prices (more accurate for perps)
-    const [solCustody, btcCustody] = await Promise.all([
-      getCustodyData(new PublicKey('7xS2gz2bTp3fwCC7knJvUWTEU9Tycczu6VhJYKgi1wdz')), // SOL
-      getCustodyData(new PublicKey('5Pv3gM9JrFFH883SWAhvJC9RPYmo8UNxuFtv5bMMALkm'))  // BTC
-    ]);
-
-    return {
-      SOL: parseFloat(solCustody.price) / 1_000_000, // Convert from base units
-      BTC: parseFloat(btcCustody.price) / 1_000_000
-    };
-  } catch (error) {
-    logger.error('Error fetching prices from Jupiter', { error: error.message });
-    // Fallback to CoinGecko if Jupiter fails
+  // Try Jupiter API 3 times before falling back to CoinGecko
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const response = await axios.get(`${config.COINGECKO_API_URL}/simple/price`, {
+      logger.info(`Fetching prices from Jupiter API (attempt ${attempt})`);
+
+      // Use Jupiter Price API v3 as specified
+      const response = await axios.get('https://lite-api.jup.ag/price/v3/', {
         params: {
-          ids: 'solana,bitcoin',
-          vs_currencies: 'usd'
-        }
+          ids: 'So11111111111111111111111111111112,EzZp7LRN2B6hQ8t3MmQG6wZMrn6X1rKT7b2Pd2WEL4y' // SOL, BTC
+        },
+        timeout: 5000
       });
-      return {
-        SOL: response.data.solana.usd,
-        BTC: response.data.bitcoin.usd
-      };
-    } catch (fallbackError) {
-      logger.error('Fallback price fetch also failed', { error: fallbackError.message });
-      throw fallbackError;
+
+      const solPrice = parseFloat(response.data.data['So11111111111111111111111111111112']?.price || '0');
+      const btcPrice = parseFloat(response.data.data['EzZp7LRN2B6hQ8t3MmQG6wZMrn6X1rKT7b2Pd2WEL4y']?.price || '0');
+
+      if (solPrice > 0 && btcPrice > 0) {
+        return {
+          SOL: solPrice,
+          BTC: btcPrice
+        };
+      }
+
+      throw new Error('Invalid price data from Jupiter API');
+    } catch (error) {
+      logger.warn(`Jupiter API attempt ${attempt} failed`, { error: error.message });
+
+      if (attempt === 3) {
+        logger.error('All Jupiter API attempts failed, falling back to CoinGecko');
+        // Fallback to CoinGecko
+        try {
+          const response = await axios.get(`${config.COINGECKO_API_URL}/simple/price`, {
+            params: {
+              ids: 'solana,bitcoin',
+              vs_currencies: 'usd'
+            },
+            timeout: 5000
+          });
+          return {
+            SOL: response.data.solana.usd,
+            BTC: response.data.bitcoin.usd
+          };
+        } catch (fallbackError) {
+          logger.error('CoinGecko fallback also failed', { error: fallbackError.message });
+          throw fallbackError;
+        }
+      }
+
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }
 }

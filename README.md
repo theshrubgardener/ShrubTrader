@@ -29,17 +29,20 @@ This is a serverless trading bot for Solana using TradingView signals, Grok AI, 
 
 3. **TradingView Setup**:
    - **Webhook URL**: `https://yqttqc1l4k.execute-api.us-east-2.amazonaws.com/dev/webhook`
-   - Payload format:
+   - **Payload Format** (include ticker for multi-asset strategies):
      ```json
      {
        "timeframe": "{{strategy.timeframe}}",
        "signal": "{{strategy.signal}}",
+       "ticker": "{{ticker}}",
        "details": {
-         "indicator": "confluence",
-         "value": "{{strategy.value}}"
+         "indicator": "{{strategy.indicator}}",
+         "value": {{strategy.value}}
        }
      }
      ```
+   - **Supported Indicators**: Unlimited (10+ different indicators supported)
+   - **Supported Tickers**: SOL, BTC (maps to SOL/USDC, BTC/USDC pairs)
 
 4. **Deploy**:
    ```bash

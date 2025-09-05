@@ -24,7 +24,7 @@ exports.handler = async (event, context) => {
   try {
     // Parse payload
     const payload = JSON.parse(event.body);
-    const { timeframe, signal, details } = payload;
+    const { timeframe, signal, ticker, details } = payload;
 
     // Validate payload
     if (!timeframe || !signal || !['buy', 'sell', 'hold'].includes(signal)) {
@@ -34,9 +34,10 @@ exports.handler = async (event, context) => {
     // Store signal in DynamoDB
     const timestamp = Date.now();
     const item = {
-      id: { S: `${timeframe}-${timestamp}` },
+      id: { S: `${ticker || 'UNKNOWN'}-${timeframe}-${timestamp}` },
       timeframe: { S: timeframe },
       signal: { S: signal },
+      ticker: { S: ticker || 'UNKNOWN' },
       details: { S: JSON.stringify(details) },
       timestamp: { N: timestamp.toString() },
       ttl: { N: (timestamp / 1000 + config.SIGNAL_TTL).toString() }
